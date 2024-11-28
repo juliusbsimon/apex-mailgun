@@ -1,0 +1,89 @@
+create FUNCTION F_MAIL_GUN(in_template varchar2, in_params varchar2 default null, in_values varchar2 default null) RETURN BOOLEAN AS
+
+    l_make_external_request CLOB;
+    v_template              varchar2(200);
+    v_body                  varchar2(10000);
+    l_param_names           apex_application_global.vc_arr2;
+    l_param_values          apex_application_global.vc_arr2;
+    v_link                  varchar2(400);
+    v_request_blob          blob;
+    v_blob_size             number;
+    lm_multipart     apex_web_service.t_multipart_parts;
+BEGIN
+    --0ed7c8474bb0f08ba7e414653eebf038-6ae2ecad-6d9df9f6
+    apex_web_service.g_request_headers.delete();
+    apex_web_service.g_request_headers(1).name := 'Content-Type';
+    apex_web_service.g_request_headers(1).value := 'multipart/form-data';
+    apex_web_service.g_request_headers(2).name := 'Authorization';
+    apex_web_service.g_request_headers(2).value :=
+            'Basic API-KEY to BASE 64';
+
+                apex_web_service.APPEND_TO_MULTIPART (
+                p_multipart    => lm_multipart,
+                p_name         => 'from',
+                p_content_type => 'text/plain',
+                p_body         => 'FROM <from-address@mg.domain.com>' );
+    
+  
+                apex_web_service.APPEND_TO_MULTIPART (
+                p_multipart    => lm_multipart,
+                p_name         => 'to',
+                p_content_type => 'text/plain',
+                p_body         =>  'mail@example.com');
+
+                apex_web_service.APPEND_TO_MULTIPART (
+                p_multipart    => lm_multipart,
+                p_name         => 'subject',
+                p_content_type => 'text/plain',
+                p_body         => 'Subject');
+                                
+                apex_web_service.APPEND_TO_MULTIPART (
+                p_multipart    => lm_multipart,
+                p_name         => 'template',
+                p_content_type => 'text/plain',
+                p_body         => 'template');
+
+                apex_web_service.APPEND_TO_MULTIPART (
+                p_multipart    => lm_multipart,
+                p_name         => 'template',
+                p_content_type => 'text/plain',
+                p_body         => 'template');
+
+
+                apex_web_service.APPEND_TO_MULTIPART(
+                p_multipart => lm_multipart,
+                p_name => 'v:variable_name',
+                p_content_type => 'text/plain',
+                p_body => 'Variable DATA);
+
+/*
+                v_request_blob := apex_web_service.make_rest_request_b(
+                        p_url =>r.doc_url,
+                        p_http_method => 'GET'
+                    );
+
+                 apex_web_service.APPEND_TO_MULTIPART (
+                p_multipart    => lm_multipart,
+                p_name         => 'attachment',
+                p_filename     => 'Receipt-'|| r.RECEIPT_NUMBER||'.pdf',
+                p_content_type => 'application/pdf',
+                p_body_blob    => v_request_blob );
+*/
+
+    l_make_external_request := apex_web_service.make_rest_request(
+                               p_url => 'https://api.mailgun.net/v3/mg.webapps.gy/messages',
+                               p_http_method => 'POST',
+                               p_body_blob => apex_web_service.generate_request_body(lm_multipart));
+
+
+    apex_json.parse(l_make_external_request);
+
+
+    if apex_web_service.g_status_code = 200 then
+        return true;
+    else
+        RAISE_APPLICATION_ERROR(-20011,'Response: ' || l_make_external_request);
+    end if;
+
+    return false;
+END F_MAIL_GUN;
