@@ -54,7 +54,7 @@ BEGIN
                 p_multipart => lm_multipart,
                 p_name => 'v:variable_name',
                 p_content_type => 'text/plain',
-                p_body => 'Variable DATA);
+                p_body => 'Variable DATA');
 
 /*
                 v_request_blob := apex_web_service.make_rest_request_b(
